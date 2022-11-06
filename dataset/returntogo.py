@@ -6,12 +6,12 @@ import numpy as np
 
 
 class returntogodataset(Dataset):
-    def __init__(self,load_from_file = False,loadpath = "rewardtogo.npy") -> None:
+    def __init__(self,load_from_file = False,loadpath = "rewardtogo.npy",trajlen = 8) -> None:
         super(returntogodataset,self).__init__()
         self.env = gym.make("maze2d-large-v1")
         self.dataset = d4rl.qlearning_dataset(self.env)
         self.len = len(self.dataset['rewards'])
-        self.transitionlen = 4
+        self.transitionlen = trajlen
         from tqdm import tqdm
         if load_from_file == False:
             # self.reward_to_go = [sum(self.dataset['rewards'][i:]) for i in tqdm(range(self.len))]
