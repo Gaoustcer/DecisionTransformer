@@ -47,11 +47,32 @@ def sequence():
         if (dataset['observations'][i+1] == dataset['next_observations'][i]).all() == False:
             print("alter")
 
+from random import randint
+import pickle
+class Trajdataset(Dataset):
+    def __init__(self,trajlengh = 16,path = "dataset/datasetrewardstogo.pkl") -> None:
+        super().__init__()
+        self.tralength = trajlengh
+        with open(path,'rb') as fp:
+            self.dataset = pickle.load(fp)
+    
+    def __len__(self):
+        return len(self.dataset)
+    
+    def __getitem__(self, index):
+        index = randint(0,len(self.dataset[index]['rewardstogo']) - self.tralength)
+        return self.dataset[index]['observations'][index:index+self.tralength],self.dataset[index]['actions'][index:index + self.tralength],self.dataset[index]['rewardstogo'][index:index + self.tralength],np.arange(0,self.tralength)
+        # return super().__getitem__(index)
+        
+
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
-    sequence()
-    loader = DataLoader(returntogodataset(),batch_size=64)
+    # sequence()
+    loader = DataLoader(Trajdataset(path='datasetrewardstogo.pkl'),batch_size=1)
     for states,actions,rewardtogo,timestep in loader:
+        print("states is ",states)
+        print("len of state",len(states))
+        print("states 0 is",states[0].shape)
         print(states.shape)
         print(actions.shape)
         print(rewardtogo.shape)

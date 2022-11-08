@@ -3,6 +3,7 @@ import torch
 import gym
 from dataset.returntogo import returntogodataset
 from model.positionembedding import PositionEmbedding
+from model.actionprediction import DecisionTransformer
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
@@ -96,7 +97,14 @@ class Agent(object):
         self.validateindex += 1
         return realreward/self.validateepoch
 
-                        
+
+# class 
+class DecisionSeq(object):
+    def __init__(self,envname = "hopper-medium-v2") -> None:
+        self.env = gym.make(envname)
+        self.Transformer = DecisionTransformer(self.env)
+        
+        pass       
 
 if __name__ == "__main__":
     main = Agent()
