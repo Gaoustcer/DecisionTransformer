@@ -105,12 +105,15 @@ class Agent(object):
 
 # class 
 class DecisionSeq(object):
-    def __init__(self,envname = "hopper-medium-v2",trajlen = 16) -> None:
+    def __init__(self,envname = "hopper-medium-v2",trajlen = 16,datasetTraj = None) -> None:
         self.env = gym.make(envname)
         self.Transformer = DecisionTransformer(self.env).cuda()
         self.trajlen = trajlen
-        self.writer = SummaryWriter("./logs/TransformerDecision")
-        self.loader = DataLoader(Trajdataset(trajlengh=self.trajlen),batch_size = 32)
+        self.writer = SummaryWriter("./logs/TransformerDecision{}".format(envname))
+        if datasetTraj is None:
+            self.loader = DataLoader(Trajdataset(trajlengh=self.trajlen),batch_size = 32)
+        else:
+            self.loader = DataLoader(returntogodataset(load_from_file=True,trajlen=self.trajlen))
         self.optim = torch.optim.Adam(self.Transformer.parameters(),lr = 0.0001)
         self.validatetime = 32
         self.actiondim = len(self.env.action_space.sample())

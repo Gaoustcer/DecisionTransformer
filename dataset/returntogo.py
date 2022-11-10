@@ -6,9 +6,9 @@ import numpy as np
 
 
 class returntogodataset(Dataset):
-    def __init__(self,load_from_file = False,loadpath = "rewardtogo.npy",trajlen = 8) -> None:
+    def __init__(self,load_from_file = False,loadpath = "rewardtogo.npy",trajlen = 8,envname = 'maze2d-large-v1') -> None:
         super(returntogodataset,self).__init__()
-        self.env = gym.make("maze2d-large-v1")
+        self.env = gym.make(envname)
         self.dataset = d4rl.qlearning_dataset(self.env)
         self.len = len(self.dataset['rewards'])
         self.transitionlen = trajlen
