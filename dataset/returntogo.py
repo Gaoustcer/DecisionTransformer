@@ -63,18 +63,33 @@ class Trajdataset(Dataset):
         index = randint(0,len(self.dataset[index]['rewardstogo']) - self.tralength)
         return self.dataset[index]['observations'][index:index+self.tralength],self.dataset[index]['actions'][index:index + self.tralength],self.dataset[index]['rewardstogo'][index:index + self.tralength],np.arange(0,self.tralength)
         # return super().__getitem__(index)
-        
+
+def averagereward():
+    with open("datasetrewardstogo.pkl",'rb') as fp:
+        datalist = pickle.load(fp)
+    rewardlist = []
+    for data in datalist:
+        rewardlist.append(sum(data['rewards']))
+    # print(rewardlist)
+    print(sum(rewardlist)/len(rewardlist))
 
 if __name__ == "__main__":
     from torch.utils.data import DataLoader
+    import torch
+    averagereward()
+    exit()
     # sequence()
-    loader = DataLoader(Trajdataset(path='datasetrewardstogo.pkl'),batch_size=1)
+    loader = DataLoader(Trajdataset(path='datasetrewardstogo.pkl'),batch_size=4)
     for states,actions,rewardtogo,timestep in loader:
-        print("states is ",states)
+        # print("states is ",states)
         print("len of state",len(states))
         print("states 0 is",states[0].shape)
+        states = torch.stack(states,dim=1)
         print(states.shape)
+        actions = torch.stack(actions,dim=1)
         print(actions.shape)
+        rewardtogo = torch.stack(rewardtogo,dim=1).unsqueeze(-1)
+        print("reward to go is",rewardtogo)
         print(rewardtogo.shape)
         print(timestep.shape)
         exit()

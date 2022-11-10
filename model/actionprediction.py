@@ -31,16 +31,19 @@ class DecisionTransformer(nn.Module):
             nn.ReLU(),
             nn.Linear(32,self.actiondim)
         )
+        self.timestepembedding = nn.Embedding(num_embeddings=1024,embedding_dim=embed_dim)
 
-    def forward(self,states,actions,rewards):
+    def forward(self,states,actions,rewards,timesteps):
         '''
         states [N,L,sdim]
         actions [N,L,adim]
         rewards [N,L,1]
+        timestep [N,L,1]
         '''
-        statesembed = self.statenet(states)
-        actionsembed = self.actionnet(actions)
-        rewardsembed = self.rewardnet(rewards)
+        timestepembed = self.timestepembedding(timesteps)
+        statesembed = self.statenet(states) + timestepembed
+        actionsembed = self.actionnet(actions) + timestepembed
+        rewardsembed = self.rewardnet(rewards) + timestepembed
         batchnum = states.shape[0]
         squencelen = states.shape[1]
 

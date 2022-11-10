@@ -1,0 +1,75 @@
+2022-11-10 15:09:09,406 INFO    StreamThr :933 [internal.py:wandb_internal():88] W&B internal server running at pid: 933, started at: 2022-11-10 15:09:09.406674
+2022-11-10 15:09:09,409 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: status
+2022-11-10 15:09:09,410 DEBUG   SenderThread:933 [sender.py:send_request():317] send_request: status
+2022-11-10 15:09:09,412 INFO    WriterThread:933 [datastore.py:open_for_write():75] open: /home/gaohaihan/ReinforcementLearning/Research_USTC/Implementation/DecisionModel/wandb/run-20221110_150909-3c2amk1z/run-3c2amk1z.wandb
+2022-11-10 15:09:09,412 DEBUG   SenderThread:933 [sender.py:send():303] send: header
+2022-11-10 15:09:09,413 DEBUG   SenderThread:933 [sender.py:send():303] send: run
+2022-11-10 15:09:12,851 ERROR   SenderThread:933 [retry.py:__call__():154] Retry attempt failed:
+Traceback (most recent call last):
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 700, in urlopen
+    self._prepare_proxy(conn)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 996, in _prepare_proxy
+    conn.connect()
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/connection.py", line 364, in connect
+    self.sock = conn = self._connect_tls_proxy(hostname, conn)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/connection.py", line 499, in _connect_tls_proxy
+    socket = ssl_wrap_socket(
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/util/ssl_.py", line 453, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(sock, context, tls_in_tls)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/util/ssl_.py", line 495, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/ssl.py", line 512, in wrap_socket
+    return self.sslsocket_class._create(
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/ssl.py", line 1070, in _create
+    self.do_handshake()
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/ssl.py", line 1341, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLEOFError: EOF occurred in violation of protocol (_ssl.c:997)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/requests/adapters.py", line 489, in send
+    resp = conn.urlopen(
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/connectionpool.py", line 787, in urlopen
+    retries = retries.increment(
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/urllib3/util/retry.py", line 592, in increment
+    raise MaxRetryError(_pool, url, error or ResponseError(cause))
+urllib3.exceptions.MaxRetryError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/wandb/sdk/lib/retry.py", line 113, in __call__
+    result = self._call_fn(*args, **kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/wandb/sdk/internal/internal_api.py", line 210, in execute
+    return self.client.execute(*args, **kwargs)  # type: ignore
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 52, in execute
+    result = self._get_result(document, *args, **kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/wandb/vendor/gql-0.2.0/wandb_gql/client.py", line 60, in _get_result
+    return self.transport.execute(document, *args, **kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/wandb/vendor/gql-0.2.0/wandb_gql/transport/requests.py", line 38, in execute
+    request = requests.post(self.url, **post_args)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/requests/api.py", line 115, in post
+    return request("post", url, data=data, json=json, **kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/requests/api.py", line 59, in request
+    return session.request(method=method, url=url, **kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/requests/sessions.py", line 587, in request
+    resp = self.send(prep, **send_kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/requests/sessions.py", line 701, in send
+    r = adapter.send(request, **kwargs)
+  File "/home/gaohaihan/anaconda3/envs/pytorch/lib/python3.10/site-packages/requests/adapters.py", line 563, in send
+    raise SSLError(e, request=request)
+requests.exceptions.SSLError: HTTPSConnectionPool(host='api.wandb.ai', port=443): Max retries exceeded with url: /graphql (Caused by SSLError(SSLEOFError(8, 'EOF occurred in violation of protocol (_ssl.c:997)')))
+2022-11-10 15:09:14,412 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:19,415 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:24,417 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:29,419 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:34,421 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:39,423 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:44,427 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: keepalive
+2022-11-10 15:09:47,543 DEBUG   HandlerThread:933 [handler.py:handle_request():139] handle_request: poll_exit
+2022-11-10 15:09:50,457 WARNING StreamThr :933 [internal.py:is_dead():385] Internal process exiting, parent pid 895 disappeared
+2022-11-10 15:09:50,457 ERROR   StreamThr :933 [internal.py:wandb_internal():147] Internal process shutdown.
+2022-11-10 15:09:50,544 INFO    WriterThread:933 [datastore.py:close():279] close: /home/gaohaihan/ReinforcementLearning/Research_USTC/Implementation/DecisionModel/wandb/run-20221110_150909-3c2amk1z/run-3c2amk1z.wandb
+2022-11-10 15:09:50,548 INFO    HandlerThread:933 [handler.py:finish():814] shutting down handler

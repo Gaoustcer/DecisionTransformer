@@ -9,7 +9,12 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from tqdm import tqdm
-
+from dataset.returntogo import Trajdataset
+# import wandb
+# wandb.init(project="DecisionTransformer")
+# wandb.init(
+#     confi
+# )
 class Agent(object):
     def __init__(self) -> None:
         self.transformer = PositionEmbedding().cuda()
@@ -100,15 +105,91 @@ class Agent(object):
 
 # class 
 class DecisionSeq(object):
-    def __init__(self,envname = "hopper-medium-v2") -> None:
+    def __init__(self,envname = "hopper-medium-v2",trajlen = 16) -> None:
         self.env = gym.make(envname)
-        self.Transformer = DecisionTransformer(self.env)
-        
-        pass       
+        self.Transformer = DecisionTransformer(self.env).cuda()
+        self.trajlen = trajlen
+        self.writer = SummaryWriter("./logs/TransformerDecision")
+        self.loader = DataLoader(Trajdataset(trajlengh=self.trajlen),batch_size = 32)
+        self.optim = torch.optim.Adam(self.Transformer.parameters(),lr = 0.0001)
+        self.validatetime = 32
+        self.actiondim = len(self.env.action_space.sample())
+        self.statedim = len(self.env.observation_space.sample())
+        self.index = 0
+
+    def train(self):
+        for states,actions,rewardstogo,timestep in tqdm(self.loader):
+            if self.index % 32 == 0:
+                r = self.validate()
+                self.writer.add_scalar("reward",r,self.index//32)
+            states = torch.stack(states,dim=1).cuda().to(torch.float32)
+            actions = torch.stack(actions,dim=1).cuda().to(torch.float32)
+            rewardstogo = torch.stack(rewardstogo,dim=1).cuda().unsqueeze(-1).to(torch.float32)
+            timestep = timestep.cuda()
+            predactions = self.Transformer(states,actions,rewardstogo,timestep)
+            self.optim.zero_grad()
+            loss = torch.nn.functional.mse_loss(predactions,actions)
+            
+            loss.backward()
+            self.writer.add_scalar("loss",loss,self.index)
+            self.index += 1
+            # self.index % 32 == 0:
+
+            self.optim.step()
+        # pass       
+
+    def validate(self):
+        reward = 0
+        from tqdm import tqdm
+        for _ in (range(self.validatetime)):
+            # exptectreward = 300
+            rewardtogo = 187.7212032675743
+            stateslist = []
+            actionslist = []
+            rewardstogolist = []
+            done = False
+            state = self.env.reset()
+            actionslist.append(torch.rand(self.actiondim).cuda())
+            rewardstogolist.append(rewardtogo)
+            stateslist.append(torch.from_numpy(state).cuda())
+            timestep = [0]
+            while done == False:
+                if len(timestep) <= self.trajlen:
+                    states = torch.stack(stateslist).unsqueeze(0).to(torch.float32)
+                    actions = torch.stack(actionslist).unsqueeze(0).to(torch.float32)
+                    rewards = torch.tensor(rewardstogolist).cuda().unsqueeze(0).unsqueeze(-1).to(torch.float32)
+                    predactions = self.Transformer.forward(states,actions,rewards,torch.tensor(timestep).unsqueeze(0).cuda())
+                    timestep.append(timestep[-1] + 1)
+                    # print("pred actions",predactions,predactions.shape)
+                    action = predactions[:,-1].squeeze().detach().cpu().numpy()
+                    ns,r,done,_ = self.env.step(action)
+                    stateslist.append(torch.from_numpy(ns).cuda())
+                    actionslist[-1] = torch.from_numpy(action).cuda()
+                    actionslist.append(torch.rand(self.actiondim).cuda())
+                    rewardstogolist.append(rewardstogolist[-1] - r)
+                    reward += r
+
+                else:
+                    stateslist = stateslist[-self.trajlen:]
+                    actionslist = actionslist[-self.trajlen:]
+                    rewardstogolist = rewardstogolist[-self.trajlen:]
+                    timestep = timestep[:self.trajlen]
+                    
+        return reward/self.validatetime
+
 
 if __name__ == "__main__":
-    main = Agent()
-    main.train()
+    DecisonModel = DecisionSeq(
+    )
+    # reward = DecisonModel.validate()
+    # print("reward is ",reward)
+    # main = Agent()
+    # main.train()
+    EPOCH = 32
+    for epoch in range(EPOCH):
+        DecisonModel.train()
+        reward = DecisonModel.train()
+        print("reward for epoch{}".format(epoch),reward)
 
                 
             

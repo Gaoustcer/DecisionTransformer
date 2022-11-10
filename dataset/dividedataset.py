@@ -49,6 +49,8 @@ def rewardtogo():
             item['rewardstogo'][i] = result
     with open("datasetrewardstogo.pkl","wb") as fp:
         pickle.dump(dataset,fp)
+
+
 if __name__ == "__main__":
     # dividedataset()
     # loadfile()
