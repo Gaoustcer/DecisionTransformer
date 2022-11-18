@@ -9,6 +9,8 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 import numpy as np
 from tqdm import tqdm
+
+from model.actioncopy import Actioncopy
 from dataset.returntogo import Trajdataset
 # import wandb
 # wandb.init(project="DecisionTransformer")
@@ -27,7 +29,7 @@ class Agent(object):
         self.trajlen = 16
         self.validateindex = 0
         self.env = gym.make('maze2d-large-v1')
-        self.validateepoch = 2
+        self.validateepoch = 32
 
 
     def train(self):
@@ -106,14 +108,17 @@ class Agent(object):
 # class 
 class DecisionSeq(object):
     def __init__(self,envname = "hopper-medium-v2",trajlen = 16,datasetTraj = None) -> None:
+        self.envname = envname
         self.env = gym.make(envname)
         self.Transformer = DecisionTransformer(self.env).cuda()
+        self.Actioncopy = Actioncopy(self.env).cuda()
         self.trajlen = trajlen
         self.writer = SummaryWriter("./logs/TransformerDecision{}".format(envname))
+        self.actioncopyoptim = torch.optim.Adam(self.Actioncopy.parameters(),lr = 0.0001)
         if datasetTraj is None:
             self.loader = DataLoader(Trajdataset(trajlengh=self.trajlen),batch_size = 32)
         else:
-            self.loader = DataLoader(returntogodataset(load_from_file=True,trajlen=self.trajlen))
+            self.loader = DataLoader(returntogodataset(load_from_file=True,trajlen=self.trajlen),batch_size=32)
         self.optim = torch.optim.Adam(self.Transformer.parameters(),lr = 0.0001)
         self.validatetime = 32
         self.actiondim = len(self.env.action_space.sample())
@@ -125,11 +130,16 @@ class DecisionSeq(object):
             if self.index % 32 == 0:
                 r = self.validate()
                 self.writer.add_scalar("reward",r,self.index//32)
-            states = torch.stack(states,dim=1).cuda().to(torch.float32)
-            actions = torch.stack(actions,dim=1).cuda().to(torch.float32)
-            rewardstogo = torch.stack(rewardstogo,dim=1).cuda().unsqueeze(-1).to(torch.float32)
+            if isinstance(states,list):
+                states = torch.stack(states,dim=1).cuda().to(torch.float32)
+                actions = torch.stack(actions,dim=1).cuda().to(torch.float32)
+                rewardstogo = torch.stack(rewardstogo,dim=1).cuda().unsqueeze(-1).to(torch.float32)
+            else:
+                states = states.cuda().to(torch.float32)
+                actions = actions.cuda().to(torch.float32)
+                rewardstogo = rewardstogo.cuda().to(torch.float32).unsqueeze(-1)
             timestep = timestep.cuda()
-            predactions = self.Transformer(states,actions,rewardstogo,timestep)
+            predactions,embedding = self.Transformer(states,actions,rewardstogo,timestep)
             self.optim.zero_grad()
             loss = torch.nn.functional.mse_loss(predactions,actions)
             
@@ -141,11 +151,44 @@ class DecisionSeq(object):
             self.optim.step()
         # pass       
 
+    def actioncopytrain(self):
+        for states,actions,_,_ in tqdm(self.loader):
+            # print("states is",states)
+            states = torch.stack(states,dim=1)
+            actions = torch.stack(actions,dim=1).cuda()
+            # print("state shape",states.shape)
+            states = states.cuda()
+            predactions = self.Actioncopy(states)
+            self.actioncopyoptim.zero_grad()
+            loss = torch.nn.functional.mse_loss(predactions,actions)
+            loss.backward()
+            self.writer.add_scalar("loss",loss,self.index)
+            self.index += 1
+
+            self.actioncopyoptim.step()
+        pass
+
+    def actioncopyvalidate(self):
+        reward = 0
+        for _ in range(self.validatetime):
+            done = False
+            state = self.env.reset()
+            while done == False:
+                action = self.Actioncopy(torch.from_numpy(state).cuda().to(torch.float32)).detach().cpu().numpy()
+                ns,r,done,_ = self.env.step(action)
+                state = ns
+                reward += r
+        return reward/self.validatetime
+
+
+    def save(self,r):
+        torch.save(self.Transformer,f"model/Transformer_withrewrd{r}_env_{self.envname}")
     def validate(self):
         reward = 0
         from tqdm import tqdm
         for _ in (range(self.validatetime)):
             # exptectreward = 300
+            # rewardtogo = 79445
             rewardtogo = 187.7212032675743
             stateslist = []
             actionslist = []
@@ -161,7 +204,7 @@ class DecisionSeq(object):
                     states = torch.stack(stateslist).unsqueeze(0).to(torch.float32)
                     actions = torch.stack(actionslist).unsqueeze(0).to(torch.float32)
                     rewards = torch.tensor(rewardstogolist).cuda().unsqueeze(0).unsqueeze(-1).to(torch.float32)
-                    predactions = self.Transformer.forward(states,actions,rewards,torch.tensor(timestep).unsqueeze(0).cuda())
+                    predactions,embedding = self.Transformer.forward(states,actions,rewards,torch.tensor(timestep).unsqueeze(0).cuda())
                     timestep.append(timestep[-1] + 1)
                     # print("pred actions",predactions,predactions.shape)
                     action = predactions[:,-1].squeeze().detach().cpu().numpy()
@@ -181,20 +224,38 @@ class DecisionSeq(object):
         return reward/self.validatetime
 
 
+# def 
+
+
 if __name__ == "__main__":
-    DecisonModel = DecisionSeq(
-    )
+    # DecisonModel = DecisionSeq(envname = "maze2d-large-v1",datasetTraj=1)
+    DecisonModel = DecisionSeq()
+    # print(DecisonModel.actioncopyvalidate())
+    # exit()
     # reward = DecisonModel.validate()
     # print("reward is ",reward)
+    # exit()
     # main = Agent()
     # main.train()
-    EPOCH = 32
+    # loader = DataLoader(returntogodataset(load_from_file=True),batch_size=32)
+    # for element in loader:
+    #     for item in element:
+    #         print("item is",item.shape)
+    #     exit()
+
+    EPOCH = 16
+    for epoch in range(EPOCH):
+        DecisonModel.actioncopytrain()
+        r = DecisonModel.actioncopyvalidate()
+        print("epoch {}".format(epoch),"reward {}".format(r))
+    exit()
     for epoch in range(EPOCH):
         DecisonModel.train()
-        reward = DecisonModel.train()
+        reward = DecisonModel.validate()
         print("reward for epoch{}".format(epoch),reward)
 
-                
+    r = DecisonModel.validate()
+    DecisonModel.save(int(r))
             
         
 

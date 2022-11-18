@@ -54,7 +54,7 @@ class DecisionTransformer(nn.Module):
         mask = torch.tril(torch.ones(3 * squencelen, 3 * squencelen),diagonal = 0).cuda()
         transformer = self.attentionlayer(key = embedding,value = embedding,query = embedding,need_weights = False,attn_mask = mask)[0]
         # print("transformer is",transformer)
-        return self.actionpred(transformer[:,1::3])
+        return self.actionpred(transformer[:,1::3]),embedding
 
 if __name__ == "__main__":
     import d4rl
